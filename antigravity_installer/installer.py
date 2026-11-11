@@ -23,12 +23,84 @@ def _exe(product):
         candidate=IDE_DIR/name
         if candidate.exists(): return candidate
     return IDE_DIR/"antigravity-ide"
-def installed_versions():
-    """Read version metadata without ever executing the installed GUI binaries.
+def _asar_member(archive, member):
+    """Read one small file from an Electron ASAR without launching the app.
 
-    Some Electron builds ignore --version/-v and launch the full application.
-    Calling them from the installer UI would therefore open Antigravity itself.
+    ASAR uses Chromium Pickle framing:
+      UInt32: size of the following pickle payload
+      UInt32: payload size (JSON byte length)
+      bytes:  JSON padded to a 4-byte boundary
+      bytes:  concatenated file contents
+    The pickle payload size includes the second uint32 and padded JSON.
     """
+    import struct
+    try:
+        with archive.open("rb") as stream:
+            frame = stream.read(8)
+            if len(frame) != 8:
+                return None
+            pickle_size, json_size = struct.unpack("<II", frame)
+            if pickle_size < 8 or json_size <= 0 or json_size > 16 * 1024 * 1024:
+                return None
+            padded_json_size = (json_size + 3) & ~3
+            if pickle_size != 4 + padded_json_size:
+                return None
+            header_bytes = stream.read(padded_json_size)
+            if len(header_bytes) != padded_json_size:
+                return None
+            header = json.loads(header_bytes[:json_size].decode("utf-8"))
+            node = header.get("files", {})
+            for part in member.split("/"):
+                if not isinstance(node, dict):
+                    return None
+                node = node.get(part, {})
+                if part != member.split("/")[-1]:
+                    node = node.get("files", {})
+            if not isinstance(node, dict) or "offset" not in node or "size" not in node:
+                return None
+            size = int(node["size"])
+            offset = int(node["offset"])
+            if size <= 0 or size > 1024 * 1024 or offset < 0:
+                return None
+            data_start = 4 + pickle_size
+            stream.seek(data_start + offset)
+            data = stream.read(size)
+            return data if len(data) == size else None
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, struct.error):
+        return None
+
+def _installed_metadata_version(executable):
+    root=executable.parent
+    resources=root/"resources"
+    candidates=(root/".antigravity-linux-version",resources/"app"/"product.json",resources/"app"/"package.json",
+                resources/"product.json",root/"package.json")
+    for metadata in candidates:
+        try:
+            raw=metadata.read_text(encoding="utf-8").strip()
+            if metadata.suffix==".json":
+                data=json.loads(raw)
+                version=data.get("version") if isinstance(data,dict) else None
+            else:
+                version=raw
+            if isinstance(version,str) and re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?",version):
+                return version
+        except Exception:
+            pass
+    archive=resources/"app.asar"
+    if archive.is_file():
+        for member in ("product.json","package.json"):
+            raw=_asar_member(archive,member)
+            if raw:
+                try:
+                    version=json.loads(raw.decode("utf-8")).get("version")
+                    if isinstance(version,str) and re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?",version):
+                        return version
+                except Exception:
+                    pass
+    return None
+
+def installed_versions():
+    """Detect versions from saved state or local Electron metadata, without executing binaries."""
     state=_state()
     result={}
     for product in ("app","ide"):
@@ -38,7 +110,7 @@ def installed_versions():
             continue
         recorded=state.get(product,{})
         version=recorded.get("version") if isinstance(recorded,dict) else None
-        result[product]=version or "Desconocida"
+        result[product]=version or _installed_metadata_version(executable) or "Instalada (versión no detectada)"
     return result
 def _icon():
     ICONS.mkdir(parents=True,exist_ok=True); path=ICONS/"antigravity.svg"
@@ -105,6 +177,7 @@ def install(products=None,progress=None,status=None):
         if status: status("Instalando %s…"%p.upper())
         _extract(archive,target,executables); archive.unlink(missing_ok=True)
         state[p]={"version":version,"source_url":urls[p],"installed_at":time.strftime("%Y-%m-%dT%H:%M:%S")}
+        (target/".antigravity-linux-version").write_text(version+"\n",encoding="utf-8")
         _save_state(state)
     repair_access(); return installed_versions()
 def launch(product):
