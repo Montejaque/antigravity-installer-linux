@@ -1,0 +1,78 @@
+import threading, tkinter as tk, webbrowser
+from tkinter import ttk, messagebox
+from .installer import install,check_updates,installed_versions,repair_access,uninstall,launch
+from . import __version__
+
+BG="#FFFFFF"; INK="#252525"; MUTED="#646464"; YELLOW="#F3D54E"; PANEL="#F5F5F5"
+REPO="https://github.com/Montejaque/antigravity-installer-linux"
+
+class App:
+    def __init__(self,root):
+        self.root=root; root.title("Antigravity Installer · Linux"); root.geometry("820x700"); root.minsize(650,600); root.configure(bg=BG)
+        style=ttk.Style(root)
+        try: style.theme_use("clam")
+        except tk.TclError: pass
+        style.configure("TFrame",background=BG); style.configure("TLabel",background=BG,foreground=INK,font=("Inter",10))
+        style.configure("TButton",font=("Inter",9),padding=8); style.configure("Horizontal.TProgressbar",troughcolor="#EEEEEE",background=YELLOW)
+        outer=ttk.Frame(root,padding=24); outer.pack(fill="both",expand=True)
+        tk.Label(outer,text="ANTIGRAVITY",bg=BG,fg=INK,font=("Inter",25,"bold")).pack(anchor="w")
+        tk.Label(outer,text="INSTALLER FOR LINUX · APP + IDE · v"+__version__,bg=BG,fg=MUTED,font=("Inter",9,"bold")).pack(anchor="w",pady=(2,12))
+        tk.Frame(outer,bg=YELLOW,height=4).pack(fill="x",pady=(0,14))
+        tk.Label(outer,text="DESCARGAS OFICIALES DE GOOGLE · INSTALACIÓN POR USUARIO · SIN ROOT",bg="#FFF8D9",fg="#594900",padx=12,pady=10,font=("Inter",9,"bold")).pack(fill="x")
+        self.app=tk.BooleanVar(value=True); self.ide=tk.BooleanVar(value=True)
+        box=tk.Frame(outer,bg=PANEL,padx=14,pady=12); box.pack(fill="x",pady=14)
+        tk.Label(box,text="¿QUÉ COMPONENTES QUIERES GESTIONAR?",bg=PANEL,fg=MUTED,font=("Inter",9,"bold")).pack(anchor="w")
+        row=tk.Frame(box,bg=PANEL); row.pack(fill="x",pady=8)
+        tk.Checkbutton(row,text="Antigravity App",variable=self.app,bg=PANEL,selectcolor="white",font=("Inter",10,"bold")).pack(side="left",padx=(0,24))
+        tk.Checkbutton(row,text="Antigravity IDE",variable=self.ide,bg=PANEL,selectcolor="white",font=("Inter",10,"bold")).pack(side="left")
+        self.versions=tk.StringVar(value="App: —     IDE: —")
+        tk.Label(outer,textvariable=self.versions,bg=BG,fg=INK,font=("Inter",10,"bold")).pack(anchor="w",pady=(0,12))
+        self.status=tk.StringVar(value="Selecciona los componentes y una operación.")
+        tk.Label(outer,textvariable=self.status,bg=BG,fg=MUTED,wraplength=740,justify="left").pack(anchor="w",pady=6)
+        self.progress=ttk.Progressbar(outer,mode="indeterminate"); self.progress.pack(fill="x",pady=8)
+        actions=ttk.Frame(outer); actions.pack(fill="x",pady=8)
+        ttk.Button(actions,text="Instalar / actualizar seleccionados",command=lambda:self.run("install")).pack(fill="x",pady=3)
+        ttk.Button(actions,text="Comprobar versiones",command=lambda:self.run("check")).pack(fill="x",pady=3)
+        ttk.Button(actions,text="Reparar accesos",command=self.repair).pack(fill="x",pady=3)
+        ttk.Button(actions,text="Desinstalar seleccionados",command=lambda:self.run("uninstall")).pack(fill="x",pady=3)
+        launchrow=ttk.Frame(outer); launchrow.pack(fill="x",pady=6)
+        ttk.Button(launchrow,text="Abrir App",command=lambda:self.open_product("app")).pack(side="left",expand=True,fill="x",padx=3)
+        ttk.Button(launchrow,text="Abrir IDE",command=lambda:self.open_product("ide")).pack(side="left",expand=True,fill="x",padx=3)
+        links=ttk.Frame(outer); links.pack(fill="x",pady=(10,0))
+        ttk.Button(links,text="Guía de ayuda / Releases",command=lambda:webbrowser.open(REPO+"/releases/latest")).pack(side="left",padx=3)
+        ttk.Button(links,text="Repositorio",command=lambda:webbrowser.open(REPO)).pack(side="left",padx=3)
+        tk.Label(outer,text="Punto Vuela Montejaque · montejaque@puntosvuela.es",bg=BG,fg=MUTED,font=("Inter",8)).pack(anchor="w",side="bottom",pady=(14,0))
+        self.refresh()
+    def selected(self):
+        items=[]
+        if self.app.get(): items.append("app")
+        if self.ide.get(): items.append("ide")
+        if not items: messagebox.showwarning("Selección","Selecciona App, IDE o ambos.",parent=self.root)
+        return items
+    def refresh(self):
+        v=installed_versions(); self.versions.set("Antigravity App: "+str(v["app"] or "No instalada")+"     |     Antigravity IDE: "+str(v["ide"] or "No instalado"))
+    def run(self,action):
+        products=self.selected()
+        if not products:return
+        if action=="uninstall" and not messagebox.askyesno("Confirmar","¿Desinstalar los componentes seleccionados? Los perfiles personales no se borran.",parent=self.root):return
+        def work():
+            try:
+                self.root.after(0,lambda:self.progress.start(10))
+                if action=="install": result=install(products,status=lambda s:self.root.after(0,lambda:self.status.set(s)))
+                elif action=="check":
+                    data=check_updates(products); result="\n".join("%s · instalada: %s · disponible: %s · %s"%(p.upper(),data["current"][p] or "no",data["latest"][p],"actualizada" if not data["updates"][p] else "hay actualización") for p in products)
+                else: uninstall(products); result="Desinstalación completada."
+                self.root.after(0,lambda:self.status.set(str(result))); self.root.after(0,self.refresh)
+            except Exception as exc: self.root.after(0,lambda:messagebox.showerror("Antigravity Installer",str(exc),parent=self.root))
+            finally: self.root.after(0,self.progress.stop)
+        threading.Thread(target=work,daemon=True).start()
+    def repair(self):
+        try: repair_access(); self.status.set("Accesos reparados."); self.refresh()
+        except Exception as e: messagebox.showerror("Reparar accesos",str(e),parent=self.root)
+    def open_product(self,p):
+        try: launch(p)
+        except Exception as e: messagebox.showerror("Abrir aplicación",str(e),parent=self.root)
+
+def main():
+    root=tk.Tk(); App(root); root.mainloop()
+if __name__=="__main__": main()
