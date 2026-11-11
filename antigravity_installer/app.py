@@ -1,10 +1,9 @@
-import threading, tkinter as tk
+import threading, tkinter as tk, sys
 from tkinter import ttk, messagebox
 from .installer import install,check_updates,installed_versions,repair_access,uninstall,launch
 from . import __version__
 
 BG="#FFFFFF"; INK="#252525"; MUTED="#646464"; YELLOW="#F3D54E"; PANEL="#F5F5F5"
-REPO="https://github.com/Montejaque/antigravity-installer-linux"
 
 class App:
     def __init__(self,root):
@@ -39,11 +38,29 @@ class App:
         ttk.Button(launchrow,text="Abrir App",command=lambda:self.open_product("app")).pack(side="left",expand=True,fill="x",padx=3)
         ttk.Button(launchrow,text="Abrir IDE",command=lambda:self.open_product("ide")).pack(side="left",expand=True,fill="x",padx=3)
         links=ttk.Frame(outer); links.pack(fill="x",pady=(10,0))
-        ttk.Button(links,text="Guía de ayuda / Releases",command=lambda:__import__("webbrowser").open("https://github.com/Montejaque/antigravity-installer-linux/releases/latest")).pack(side="left",padx=3)
+        ttk.Button(links,text="Guía de ayuda",command=self.show_guide).pack(side="left",padx=3)
         credits=tk.Frame(outer,bg=BG); credits.pack(side="bottom",fill="x",pady=(14,0))
         tk.Label(credits,text="Desarrollado por Francisco Javier Gallego Orellana",bg=BG,fg=INK,font=("Inter",8,"bold")).pack(anchor="w")
         tk.Label(credits,text="Punto Vuela Montejaque · montejaque@puntosvuela.es",bg=BG,fg=MUTED,font=("Inter",8)).pack(anchor="w")
         self.refresh()
+    def show_guide(self):
+        base=Path(getattr(sys,"_MEIPASS",Path(__file__).resolve().parents[1]))
+        guide=base/"docs"/"GUIA_USUARIO.md"
+        if not guide.is_file():
+            messagebox.showerror("Guía de ayuda","No se encuentra el archivo de ayuda incluido en esta instalación.",parent=self.root)
+            return
+        window=tk.Toplevel(self.root)
+        window.title("Guía de ayuda · Antigravity Installer")
+        window.geometry("760x620")
+        window.transient(self.root)
+        frame=ttk.Frame(window,padding=12); frame.pack(fill="both",expand=True)
+        text=tk.Text(frame,wrap="word",font=("Inter",10),padx=12,pady=10,relief="flat")
+        scroll=ttk.Scrollbar(frame,orient="vertical",command=text.yview)
+        text.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right",fill="y"); text.pack(side="left",fill="both",expand=True)
+        text.insert("1.0",guide.read_text(encoding="utf-8"))
+        text.configure(state="disabled")
+
     def selected(self):
         items=[]
         if self.app.get(): items.append("app")
