@@ -24,29 +24,49 @@ def _exe(product):
         if candidate.exists(): return candidate
     return IDE_DIR/"antigravity-ide"
 def _asar_member(archive, member):
-    """Read one small file from an Electron ASAR without launching the app."""
+    """Read one small file from an Electron ASAR without launching the app.
+
+    ASAR uses Chromium Pickle framing:
+      UInt32: size of the following pickle payload
+      UInt32: payload size (JSON byte length)
+      bytes:  JSON padded to a 4-byte boundary
+      bytes:  concatenated file contents
+    The pickle payload size includes the second uint32 and padded JSON.
+    """
     import struct
     try:
         with archive.open("rb") as stream:
-            prefix=stream.read(8)
-            if len(prefix)!=8: return None
-            header_size=struct.unpack("<I",prefix[0:4])[0]
-            json_size=struct.unpack("<I",prefix[4:8])[0]
-            if header_size<8 or json_size<=0 or json_size>16*1024*1024: return None
-            header_bytes=stream.read(json_size)
-            if len(header_bytes)!=json_size: return None
-            header=json.loads(header_bytes.decode("utf-8"))
-            node=header.get("files",{})
-            parts=member.split("/")
-            for index,part in enumerate(parts):
-                node=node.get(part,{})
-                if index<len(parts)-1: node=node.get("files",{})
-            if not isinstance(node,dict) or "offset" not in node or "size" not in node: return None
-            size=int(node["size"])
-            if size<=0 or size>1024*1024: return None
-            stream.seek(8+header_size+int(node["offset"]))
-            return stream.read(size)
-    except Exception:
+            frame = stream.read(8)
+            if len(frame) != 8:
+                return None
+            pickle_size, json_size = struct.unpack("<II", frame)
+            if pickle_size < 8 or json_size <= 0 or json_size > 16 * 1024 * 1024:
+                return None
+            padded_json_size = (json_size + 3) & ~3
+            if pickle_size != 4 + padded_json_size:
+                return None
+            header_bytes = stream.read(padded_json_size)
+            if len(header_bytes) != padded_json_size:
+                return None
+            header = json.loads(header_bytes[:json_size].decode("utf-8"))
+            node = header.get("files", {})
+            for part in member.split("/"):
+                if not isinstance(node, dict):
+                    return None
+                node = node.get(part, {})
+                if part != member.split("/")[-1]:
+                    node = node.get("files", {})
+            if not isinstance(node, dict) or "offset" not in node or "size" not in node:
+                return None
+            size = int(node["size"])
+            offset = int(node["offset"])
+            if size <= 0 or size > 1024 * 1024 or offset < 0:
+                return None
+            data_start = 8 + pickle_size
+            stream.seek(data_start + offset)
+            data = stream.read(size)
+            return data if len(data) == size else None
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError, struct.error):
         return None
 
 def _installed_metadata_version(executable):
