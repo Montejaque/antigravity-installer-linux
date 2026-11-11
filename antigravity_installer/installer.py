@@ -23,12 +23,60 @@ def _exe(product):
         candidate=IDE_DIR/name
         if candidate.exists(): return candidate
     return IDE_DIR/"antigravity-ide"
-def installed_versions():
-    """Read version metadata without ever executing the installed GUI binaries.
+def _asar_member(archive, member):
+    """Read one small file from an Electron ASAR without launching the app."""
+    import struct
+    try:
+        with archive.open("rb") as stream:
+            prefix=stream.read(16)
+            if len(prefix)!=16: return None
+            header_size=struct.unpack("<I",prefix[4:8])[0]
+            json_size=struct.unpack("<I",prefix[12:16])[0]
+            if header_size<4 or json_size<=0 or json_size>16*1024*1024: return None
+            header_bytes=stream.read(json_size)
+            if len(header_bytes)!=json_size: return None
+            header=json.loads(header_bytes.decode("utf-8"))
+            node=header.get("files",{})
+            parts=member.split("/")
+            for index,part in enumerate(parts):
+                node=node.get(part,{})
+                if index<len(parts)-1: node=node.get("files",{})
+            if not isinstance(node,dict) or "offset" not in node or "size" not in node: return None
+            size=int(node["size"])
+            if size<=0 or size>1024*1024: return None
+            stream.seek(8+header_size+int(node["offset"]))
+            return stream.read(size)
+    except Exception:
+        return None
 
-    Some Electron builds ignore --version/-v and launch the full application.
-    Calling them from the installer UI would therefore open Antigravity itself.
-    """
+def _installed_metadata_version(executable):
+    root=executable.parent
+    resources=root/"resources"
+    candidates=(resources/"app"/"package.json",resources/"app"/"product.json",
+                resources/"product.json",root/"package.json")
+    for metadata in candidates:
+        try:
+            data=json.loads(metadata.read_text(encoding="utf-8"))
+            version=data.get("version")
+            if isinstance(version,str) and re.fullmatch(r"\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",version):
+                return version
+        except Exception:
+            pass
+    archive=resources/"app.asar"
+    if archive.is_file():
+        for member in ("package.json","product.json"):
+            raw=_asar_member(archive,member)
+            if raw:
+                try:
+                    version=json.loads(raw.decode("utf-8")).get("version")
+                    if isinstance(version,str) and re.fullmatch(r"\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",version):
+                        return version
+                except Exception:
+                    pass
+    return None
+
+def installed_versions():
+    """Detect versions from saved state or local Electron metadata, without executing binaries."""
     state=_state()
     result={}
     for product in ("app","ide"):
@@ -38,7 +86,7 @@ def installed_versions():
             continue
         recorded=state.get(product,{})
         version=recorded.get("version") if isinstance(recorded,dict) else None
-        result[product]=version or "Desconocida"
+        result[product]=version or _installed_metadata_version(executable) or "Instalada (versión no detectada)"
     return result
 def _icon():
     ICONS.mkdir(parents=True,exist_ok=True); path=ICONS/"antigravity.svg"
