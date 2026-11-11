@@ -62,7 +62,7 @@ def _asar_member(archive, member):
             offset = int(node["offset"])
             if size <= 0 or size > 1024 * 1024 or offset < 0:
                 return None
-            data_start = 8 + pickle_size
+            data_start = 4 + pickle_size
             stream.seek(data_start + offset)
             data = stream.read(size)
             return data if len(data) == size else None
