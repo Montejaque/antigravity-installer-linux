@@ -8,7 +8,7 @@ REPO="https://github.com/Montejaque/antigravity-installer-linux"
 
 class App:
     def __init__(self,root):
-        self.root=root; root.title("Antigravity Installer · Linux"); root.geometry("820x700"); root.minsize(650,600); root.configure(bg=BG)
+        self.root=root; root.title("Antigravity Installer · Linux"); root.geometry("820x720"); root.minsize(650,620); root.configure(bg=BG)
         style=ttk.Style(root)
         try: style.theme_use("clam")
         except tk.TclError: pass
@@ -40,7 +40,9 @@ class App:
         ttk.Button(launchrow,text="Abrir IDE",command=lambda:self.open_product("ide")).pack(side="left",expand=True,fill="x",padx=3)
         links=ttk.Frame(outer); links.pack(fill="x",pady=(10,0))
         ttk.Button(links,text="Guía de ayuda / Releases",command=lambda:__import__("webbrowser").open("https://github.com/Montejaque/antigravity-installer-linux/releases/latest")).pack(side="left",padx=3)
-        tk.Label(outer,text="Punto Vuela Montejaque · montejaque@puntosvuela.es",bg=BG,fg=MUTED,font=("Inter",8)).pack(anchor="w",side="bottom",pady=(14,0))
+        credits=tk.Frame(outer,bg=BG); credits.pack(side="bottom",fill="x",pady=(14,0))
+        tk.Label(credits,text="Desarrollado por Francisco Javier Gallego Orellana",bg=BG,fg=INK,font=("Inter",8,"bold")).pack(anchor="w")
+        tk.Label(credits,text="Punto Vuela Montejaque · montejaque@puntosvuela.es",bg=BG,fg=MUTED,font=("Inter",8)).pack(anchor="w")
         self.refresh()
     def selected(self):
         items=[]
