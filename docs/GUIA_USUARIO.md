@@ -1,6 +1,6 @@
 # Guía de ayuda · Antigravity Installer para Linux
 
-**Punto Vuela Montejaque · Versión 1.1.3 · Linux x86_64**
+**Punto Vuela Montejaque · Versión 1.1.4 · Linux x86_64**
 
 ## 1. Qué hace
 Instala y mantiene Google Antigravity App y Antigravity IDE desde una interfaz gráfica. La AppImage contiene el instalador, no los programas originales. Los paquetes se descargan desde la página oficial de Google al realizar la operación.
