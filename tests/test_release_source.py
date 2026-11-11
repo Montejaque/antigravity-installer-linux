@@ -37,7 +37,9 @@ class ReleaseSourceTests(unittest.TestCase):
             raw=json.dumps(header).encode(); padded=raw+b"\0"*((4-len(raw)%4)%4)
             pickle=struct.pack("<I",len(raw))+padded
             archive=resources/"app.asar"
-            archive.write_bytes(struct.pack("<II",len(pickle),len(raw))+pickle+package)
+            # ASAR stores a UInt32 pickle size, then a Pickle containing
+            # the JSON byte length and JSON padded to a 4-byte boundary.
+            archive.write_bytes(struct.pack("<I",len(pickle))+pickle+package)
             exe=root/"Antigravity"; exe.write_text("fake")
             with patch("antigravity_installer.installer._exe",return_value=exe):
                 with patch("antigravity_installer.installer._state",return_value={}):
