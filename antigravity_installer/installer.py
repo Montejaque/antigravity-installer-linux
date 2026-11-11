@@ -23,19 +23,22 @@ def _exe(product):
         candidate=IDE_DIR/name
         if candidate.exists(): return candidate
     return IDE_DIR/"antigravity-ide"
-def _binary_version(path):
-    if not path.exists(): return None
-    for arg in ("--version","-v","-version"):
-        try:
-            result=subprocess.run([str(path),arg],capture_output=True,text=True,timeout=8)
-            match=re.search(r"\b\d+\.\d+(?:\.\d+)?(?:[-+][\w.-]+)?\b",(result.stdout or "")+(result.stderr or ""))
-            if match: return match.group(0)
-        except Exception: pass
-    return None
 def installed_versions():
-    state=_state(); result={}
-    for p in ("app","ide"):
-        result[p]=(_binary_version(_exe(p)) or state.get(p,{}).get("version")) if _exe(p).exists() else None
+    """Read version metadata without ever executing the installed GUI binaries.
+
+    Some Electron builds ignore --version/-v and launch the full application.
+    Calling them from the installer UI would therefore open Antigravity itself.
+    """
+    state=_state()
+    result={}
+    for product in ("app","ide"):
+        executable=_exe(product)
+        if not executable.is_file():
+            result[product]=None
+            continue
+        recorded=state.get(product,{})
+        version=recorded.get("version") if isinstance(recorded,dict) else None
+        result[product]=version or "Desconocida"
     return result
 def _icon():
     ICONS.mkdir(parents=True,exist_ok=True); path=ICONS/"antigravity.svg"
