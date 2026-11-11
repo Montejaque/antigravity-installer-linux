@@ -28,11 +28,12 @@ def _asar_member(archive, member):
     import struct
     try:
         with archive.open("rb") as stream:
-            prefix=stream.read(16)
-            if len(prefix)!=16: return None
+            prefix=stream.read(12)
+            if len(prefix)!=12: return None
             header_size=struct.unpack("<I",prefix[4:8])[0]
-            json_size=struct.unpack("<I",prefix[12:16])[0]
+            json_size=struct.unpack("<I",prefix[8:12])[0]
             if header_size<4 or json_size<=0 or json_size>16*1024*1024: return None
+            stream.seek(12)
             header_bytes=stream.read(json_size)
             if len(header_bytes)!=json_size: return None
             header=json.loads(header_bytes.decode("utf-8"))
