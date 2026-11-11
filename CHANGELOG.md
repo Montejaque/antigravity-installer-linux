@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 1.1.2
+- La interfaz identifica expresamente al desarrollador y a Punto Vuela Montejaque.
+- Actualizada la guía de ayuda y los metadatos del PDF de la versión.
+
 ## 1.1.1
 - Corregido el inicio involuntario de Antigravity App e IDE al abrir la AppImage.
 - La detección de instalaciones ya no ejecuta los binarios gráficos; consulta únicamente el estado local.
