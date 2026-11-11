@@ -20,11 +20,11 @@ class ReleaseSourceTests(unittest.TestCase):
                 path = Path(tmp) / product
                 path.write_text("fake executable")
                 paths[product] = path
-            with patch("antigravity_installer.installer._exe", side_effect=lambda p: paths[p]), \\
-                 patch("antigravity_installer.installer._state", return_value={"app": {"version": "1.2.3"}}), \\
-                 patch("antigravity_installer.installer.subprocess.run") as run:
-                versions = installed_versions()
-            run.assert_not_called()
+            with patch("antigravity_installer.installer._exe", side_effect=lambda p: paths[p]):
+                with patch("antigravity_installer.installer._state", return_value={"app": {"version": "1.2.3"}}):
+                    with patch("antigravity_installer.installer.subprocess.run") as run:
+                        versions = installed_versions()
+                    run.assert_not_called()
             self.assertEqual(versions["app"], "1.2.3")
             self.assertEqual(versions["ide"], "Desconocida")
 
