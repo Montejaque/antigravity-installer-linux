@@ -43,13 +43,6 @@ jobs:
             dist/Guia-Ayuda-Antigravity.pdf
           if-no-files-found: error
           retention-days: 30
-      - name: Point release tag to the tested source revision
-        if: startsWith(github.ref, 'refs/heads/v')
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f "$GITHUB_REF_NAME" "$GITHUB_SHA"
-          git push --force origin "refs/tags/$GITHUB_REF_NAME"
       - name: Create GitHub Release and upload assets
         if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/v')
         uses: softprops/action-gh-release@v2
