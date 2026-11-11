@@ -53,7 +53,7 @@ def _asar_member(archive, member):
 def _installed_metadata_version(executable):
     root=executable.parent
     resources=root/"resources"
-    candidates=(resources/"app"/"package.json",resources/"app"/"product.json",
+    candidates=(resources/"app"/"product.json",resources/"app"/"package.json",
                 resources/"product.json",root/"package.json")
     for metadata in candidates:
         try:
@@ -65,7 +65,7 @@ def _installed_metadata_version(executable):
             pass
     archive=resources/"app.asar"
     if archive.is_file():
-        for member in ("package.json","product.json"):
+        for member in ("product.json","package.json"):
             raw=_asar_member(archive,member)
             if raw:
                 try:
