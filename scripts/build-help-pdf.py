@@ -33,7 +33,7 @@ def build():
     styles.add(ParagraphStyle(name="HeadX",fontName=strong,fontSize=12,leading=16,textColor=DARK,spaceBefore=10,spaceAfter=5,keepWithNext=True))
     styles.add(ParagraphStyle(name="BodyX",fontName=normal,fontSize=8.5,leading=12,textColor=DARK,spaceAfter=4))
     styles.add(ParagraphStyle(name="BulletX",fontName=normal,fontSize=8.2,leading=11,leftIndent=12,firstLineIndent=-8,spaceAfter=3))
-    story=[Paragraph("ANTIGRAVITY INSTALLER",styles["CoverX"]),Paragraph("GUÍA DE AYUDA · LINUX x86_64 · VERSIÓN 1.1.1<br/>PUNTO VUELA MONTEJAQUE",styles["SubX"]),HRFlowable(width="100%",thickness=4,color=YELLOW,spaceAfter=12)]
+    story=[Paragraph("ANTIGRAVITY INSTALLER",styles["CoverX"]),Paragraph("GUÍA DE AYUDA · LINUX x86_64 · VERSIÓN 1.1.2<br/>PUNTO VUELA MONTEJAQUE",styles["SubX"]),HRFlowable(width="100%",thickness=4,color=YELLOW,spaceAfter=12)]
     for raw in SOURCE.read_text(encoding="utf-8").splitlines():
         line=raw.strip()
         if not line or line.startswith("# ") or line.startswith("**Punto Vuela"): continue
@@ -45,7 +45,7 @@ def build():
         line=re.sub(r"\*\*(.*?)\*\*",r"\1",line).replace("`","")
         story.append(Paragraph(esc(line),styles["BodyX"]))
     OUT.parent.mkdir(parents=True,exist_ok=True)
-    doc=SimpleDocTemplate(str(OUT),pagesize=A4,rightMargin=18*mm,leftMargin=18*mm,topMargin=20*mm,bottomMargin=20*mm,title="Guía de ayuda · Antigravity Installer",author="Punto Vuela Montejaque")
+    doc=SimpleDocTemplate(str(OUT),pagesize=A4,rightMargin=18*mm,leftMargin=18*mm,topMargin=20*mm,bottomMargin=20*mm,title="Guía de ayuda · Antigravity Installer",author="Francisco Javier Gallego Orellana · Punto Vuela Montejaque")
     def footer(canvas,document):
         canvas.saveState()
         w,h=A4
