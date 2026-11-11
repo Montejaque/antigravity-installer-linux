@@ -28,12 +28,11 @@ def _asar_member(archive, member):
     import struct
     try:
         with archive.open("rb") as stream:
-            prefix=stream.read(12)
-            if len(prefix)!=12: return None
-            header_size=struct.unpack("<I",prefix[4:8])[0]
-            json_size=struct.unpack("<I",prefix[8:12])[0]
-            if header_size<4 or json_size<=0 or json_size>16*1024*1024: return None
-            stream.seek(12)
+            prefix=stream.read(8)
+            if len(prefix)!=8: return None
+            header_size=struct.unpack("<I",prefix[0:4])[0]
+            json_size=struct.unpack("<I",prefix[4:8])[0]
+            if header_size<8 or json_size<=0 or json_size>16*1024*1024: return None
             header_bytes=stream.read(json_size)
             if len(header_bytes)!=json_size: return None
             header=json.loads(header_bytes.decode("utf-8"))
@@ -53,7 +52,7 @@ def _asar_member(archive, member):
 def _installed_metadata_version(executable):
     root=executable.parent
     resources=root/"resources"
-    candidates=(resources/"app"/"product.json",resources/"app"/"package.json",
+    candidates=(root/".antigravity-linux-version",resources/"app"/"product.json",resources/"app"/"package.json",
                 resources/"product.json",root/"package.json")
     for metadata in candidates:
         try:
@@ -154,6 +153,7 @@ def install(products=None,progress=None,status=None):
         if status: status("Instalando %s…"%p.upper())
         _extract(archive,target,executables); archive.unlink(missing_ok=True)
         state[p]={"version":version,"source_url":urls[p],"installed_at":time.strftime("%Y-%m-%dT%H:%M:%S")}
+        (target/".antigravity-linux-version").write_text(version+"\\n",encoding="utf-8")
         _save_state(state)
     repair_access(); return installed_versions()
 def launch(product):
