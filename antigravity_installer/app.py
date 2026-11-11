@@ -89,7 +89,7 @@ class App:
                         label="Antigravity App" if product=="app" else "Antigravity IDE"
                         version=result.get(product) if isinstance(result,dict) else None
                         details.append(label+((" · versión "+str(version)) if version else " · instalada"))
-                    summary="La instalación ha finalizado correctamente.\\n\\n"+"\\n".join(details)
+                    summary="La instalación ha finalizado correctamente.\n\n"+"\n".join("• "+detail for detail in details)
                     self.root.after(0,lambda:messagebox.showinfo("Instalación completada",summary,parent=self.root))
             except Exception as exc: self.root.after(0,lambda:messagebox.showerror("Antigravity Installer",str(exc),parent=self.root))
             finally: self.root.after(0,self.progress.stop)
