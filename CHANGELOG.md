@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 1.1.3
+- Detección de versión instalada desde los metadatos locales de Electron/ASAR sin ejecutar la aplicación.
+- Si el paquete no contiene una versión legible, se identifica como instalada sin mostrar «Desconocida».
+- El botón «Guía de ayuda» abre la guía incluida en la AppImage; se elimina la referencia a Releases.
+
 ## 1.1.2
 - La interfaz identifica expresamente al desarrollador y a Punto Vuela Montejaque.
 - Actualizada la guía de ayuda y los metadatos del PDF de la versión.
