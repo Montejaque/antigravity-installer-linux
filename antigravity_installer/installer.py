@@ -14,9 +14,15 @@ def _state():
 def _save_state(data):
     OPT.mkdir(parents=True,exist_ok=True); STATE.write_text(json.dumps(data,indent=2),encoding="utf-8")
 def _exe(product):
-    if product=="app": return APP_DIR/"antigravity"
-    candidate=IDE_DIR/"bin/antigravity-ide"
-    return candidate if candidate.exists() else IDE_DIR/"antigravity-ide"
+    if product=="app":
+        for name in ("Antigravity","antigravity"):
+            candidate=APP_DIR/name
+            if candidate.exists(): return candidate
+        return APP_DIR/"Antigravity"
+    for name in ("antigravity-ide","Antigravity IDE"):
+        candidate=IDE_DIR/name
+        if candidate.exists(): return candidate
+    return IDE_DIR/"antigravity-ide"
 def _binary_version(path):
     if not path.exists(): return None
     for arg in ("--version","-v","-version"):
@@ -52,7 +58,7 @@ def _launcher(product):
     desktop.chmod(0o644)
 def repair_access():
     for p in ("app","ide"):
-        if _exe(p).exists(): _launcher(p)
+        if _exe(p).is_file(): _launcher(p)
     try: subprocess.run(["update-desktop-database",str(DESKTOP)],check=False,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     except FileNotFoundError: pass
 def check_updates(products=None):
@@ -63,17 +69,23 @@ def check_updates(products=None):
     return {"current":{p:current[p] for p in products},"latest":latest,
             "installed":{p:current[p] is not None for p in products},
             "updates":{p:latest[p]!="unknown" and current[p]!=latest[p] for p in products}}
-def _extract(archive,target,executable):
+def _extract(archive,target,executable_names):
     stage=Path(tempfile.mkdtemp(prefix=".antigravity-stage-",dir=str(OPT)))
     try:
-        subprocess.run(["tar","-xzf",str(archive),"-C",str(stage),"--strip-components=1","--no-same-owner"],check=True,capture_output=True)
-        exe=stage/executable
-        if not exe.is_file(): raise RuntimeError("El paquete no contiene el ejecutable esperado: "+executable)
+        # Do not strip a presumed top-level folder: Google's App and IDE tarballs
+        # do not necessarily share the same archive layout.
+        subprocess.run(["tar","-xzf",str(archive),"-C",str(stage),"--no-same-owner"],check=True,capture_output=True)
+        candidates=[]
+        for name in executable_names:
+            candidates.extend(p for p in stage.rglob(name) if p.is_file())
+        if not candidates: raise RuntimeError("El paquete no contiene el ejecutable esperado: "+", ".join(executable_names))
+        exe=candidates[0]; root=exe.parent
         exe.chmod(exe.stat().st_mode|0o111)
         backup=target.with_name(target.name+".previous")
         if backup.exists(): shutil.rmtree(backup)
         if target.exists(): target.rename(backup)
-        stage.rename(target)
+        if root==stage: stage.rename(target)
+        else: root.rename(target); shutil.rmtree(stage,ignore_errors=True)
         if backup.exists(): shutil.rmtree(backup)
     except Exception:
         shutil.rmtree(stage,ignore_errors=True); raise
@@ -81,19 +93,20 @@ def install(products=None,progress=None,status=None):
     products=tuple(products or ("app","ide"))
     if not products or set(products)-{"app","ide"}: raise ValueError("Selecciona App, IDE o ambas.")
     OPT.mkdir(parents=True,exist_ok=True); urls=latest_downloads(products); state=_state()
-    jobs={"app":(APP_DIR,"antigravity","Antigravity-App.tar.gz"),"ide":(IDE_DIR,"bin/antigravity-ide","Antigravity-IDE.tar.gz")}
+    jobs={"app":(APP_DIR,("Antigravity","antigravity"),"Antigravity-App.tar.gz"),
+          "ide":(IDE_DIR,("antigravity-ide","Antigravity IDE"),"Antigravity-IDE.tar.gz")}
     for i,p in enumerate(products,1):
-        target,executable,filename=jobs[p]; version=version_from_url(urls[p]); archive=OPT/filename
+        target,executables,filename=jobs[p]; version=version_from_url(urls[p]); archive=OPT/filename
         if status: status("(%d/%d) Descargando %s · %s"%(i,len(products),p.upper(),version))
         download(urls[p],str(archive),progress)
         if status: status("Instalando %s…"%p.upper())
-        _extract(archive,target,executable); archive.unlink(missing_ok=True)
+        _extract(archive,target,executables); archive.unlink(missing_ok=True)
         state[p]={"version":version,"source_url":urls[p],"installed_at":time.strftime("%Y-%m-%dT%H:%M:%S")}
         _save_state(state)
     repair_access(); return installed_versions()
 def launch(product):
     path=_exe(product)
-    if not path.exists(): raise RuntimeError("El componente seleccionado no está instalado.")
+    if not path.is_file(): raise RuntimeError("El componente seleccionado no está instalado.")
     subprocess.Popen([str(path)],start_new_session=True)
 def uninstall(products=None):
     products=tuple(products or ("app","ide"))
