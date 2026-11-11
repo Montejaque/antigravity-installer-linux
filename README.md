@@ -1,6 +1,6 @@
 # Antigravity Installer for Linux
 
-**Versión 1.1.3 · Punto Vuela Montejaque**
+**Versión 1.1.4 · Punto Vuela Montejaque**
 
 Instalador gráfico AppImage para Google Antigravity App y Antigravity IDE. Permite instalar, actualizar, comprobar versiones, reparar accesos y desinstalar cada componente por separado, sin permisos de administrador.
 
