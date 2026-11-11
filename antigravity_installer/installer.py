@@ -58,7 +58,7 @@ def _installed_metadata_version(executable):
         try:
             data=json.loads(metadata.read_text(encoding="utf-8"))
             version=data.get("version")
-            if isinstance(version,str) and re.fullmatch(r"\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",version):
+            if isinstance(version,str) and re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?",version):
                 return version
         except Exception:
             pass
@@ -69,7 +69,7 @@ def _installed_metadata_version(executable):
             if raw:
                 try:
                     version=json.loads(raw.decode("utf-8")).get("version")
-                    if isinstance(version,str) and re.fullmatch(r"\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",version):
+                    if isinstance(version,str) and re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?",version):
                         return version
                 except Exception:
                     pass
