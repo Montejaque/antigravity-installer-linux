@@ -37,7 +37,7 @@ class ReleaseSourceTests(unittest.TestCase):
             raw=json.dumps(header).encode(); padded=raw+b"\0"*((4-len(raw)%4)%4)
             pickle=struct.pack("<I",len(raw))+padded
             archive=resources/"app.asar"
-            archive.write_bytes(struct.pack("<II",4,len(pickle))+pickle+package)
+            archive.write_bytes(struct.pack("<II",len(pickle),len(raw))+pickle+package)
             exe=root/"Antigravity"; exe.write_text("fake")
             with patch("antigravity_installer.installer._exe",return_value=exe):
                 with patch("antigravity_installer.installer._state",return_value={}):
