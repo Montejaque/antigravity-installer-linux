@@ -34,7 +34,7 @@ class ReleaseSourceTests(unittest.TestCase):
             root=Path(tmp); resources=root/"resources"; resources.mkdir()
             package=json.dumps({"name":"antigravity","version":"9.8.7"}).encode()
             header={"files":{"package.json":{"size":len(package),"offset":"0"}}}
-            raw=json.dumps(header).encode(); padded=raw+b"\\0"*((4-len(raw)%4)%4)
+            raw=json.dumps(header).encode(); padded=raw+b"\0"*((4-len(raw)%4)%4)
             pickle=struct.pack("<I",len(raw))+padded
             archive=resources/"app.asar"
             archive.write_bytes(struct.pack("<II",4,len(pickle))+pickle+package)
