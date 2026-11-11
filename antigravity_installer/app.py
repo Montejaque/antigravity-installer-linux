@@ -1,4 +1,4 @@
-import threading, tkinter as tk, webbrowser
+import threading, tkinter as tk
 from tkinter import ttk, messagebox
 from .installer import install,check_updates,installed_versions,repair_access,uninstall,launch
 from . import __version__
@@ -39,7 +39,7 @@ class App:
         ttk.Button(launchrow,text="Abrir App",command=lambda:self.open_product("app")).pack(side="left",expand=True,fill="x",padx=3)
         ttk.Button(launchrow,text="Abrir IDE",command=lambda:self.open_product("ide")).pack(side="left",expand=True,fill="x",padx=3)
         links=ttk.Frame(outer); links.pack(fill="x",pady=(10,0))
-        ttk.Button(links,text="Guía de ayuda / Releases",command=lambda:webbrowser.open(REPO+"/releases/latest")).pack(side="left",padx=3)
+        ttk.Button(links,text="Guía de ayuda / Releases",command=lambda:__import__("webbrowser").open("https://github.com/Montejaque/antigravity-installer-linux/releases/latest")).pack(side="left",padx=3)
         ttk.Button(links,text="Repositorio",command=lambda:webbrowser.open(REPO)).pack(side="left",padx=3)
         tk.Label(outer,text="Punto Vuela Montejaque · montejaque@puntosvuela.es",bg=BG,fg=MUTED,font=("Inter",8)).pack(anchor="w",side="bottom",pady=(14,0))
         self.refresh()
