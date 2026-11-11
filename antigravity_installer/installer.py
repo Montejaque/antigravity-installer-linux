@@ -56,8 +56,12 @@ def _installed_metadata_version(executable):
                 resources/"product.json",root/"package.json")
     for metadata in candidates:
         try:
-            data=json.loads(metadata.read_text(encoding="utf-8"))
-            version=data.get("version")
+            raw=metadata.read_text(encoding="utf-8").strip()
+            if metadata.suffix==".json":
+                data=json.loads(raw)
+                version=data.get("version") if isinstance(data,dict) else None
+            else:
+                version=raw
             if isinstance(version,str) and re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?",version):
                 return version
         except Exception:
@@ -153,7 +157,7 @@ def install(products=None,progress=None,status=None):
         if status: status("Instalando %s…"%p.upper())
         _extract(archive,target,executables); archive.unlink(missing_ok=True)
         state[p]={"version":version,"source_url":urls[p],"installed_at":time.strftime("%Y-%m-%dT%H:%M:%S")}
-        (target/".antigravity-linux-version").write_text(version+"\\n",encoding="utf-8")
+        (target/".antigravity-linux-version").write_text(version+"\n",encoding="utf-8")
         _save_state(state)
     repair_access(); return installed_versions()
 def launch(product):
