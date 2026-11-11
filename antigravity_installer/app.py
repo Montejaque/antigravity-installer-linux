@@ -1,4 +1,5 @@
 import threading, tkinter as tk, sys
+from pathlib import Path
 from tkinter import ttk, messagebox
 from .installer import install,check_updates,installed_versions,repair_access,uninstall,launch
 from . import __version__
