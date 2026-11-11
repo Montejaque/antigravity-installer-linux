@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## 1.1.4
+- Corregida la lectura de cabeceras ASAR para detectar la versión real desde los metadatos de Electron.
+- Se guarda también la versión en un archivo local de instalación para futuras comprobaciones.
+
 ## 1.1.3
 - Detección de versión instalada desde los metadatos locales de Electron/ASAR sin ejecutar la aplicación.
 - Si el paquete no contiene una versión legible, se identifica como instalada sin mostrar «Desconocida».
