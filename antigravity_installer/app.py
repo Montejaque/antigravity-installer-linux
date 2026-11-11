@@ -81,7 +81,16 @@ class App:
                 elif action=="check":
                     data=check_updates(products); result="\n".join("%s · instalada: %s · disponible: %s · %s"%(p.upper(),data["current"][p] or "no",data["latest"][p],"actualizada" if not data["updates"][p] else "hay actualización") for p in products)
                 else: uninstall(products); result="Desinstalación completada."
-                self.root.after(0,lambda:self.status.set(str(result))); self.root.after(0,self.refresh)
+                self.root.after(0,lambda:self.status.set(str(result)))
+                self.root.after(0,self.refresh)
+                if action=="install":
+                    details=[]
+                    for product in products:
+                        label="Antigravity App" if product=="app" else "Antigravity IDE"
+                        version=result.get(product) if isinstance(result,dict) else None
+                        details.append(label+((" · versión "+str(version)) if version else " · instalada"))
+                    summary="La instalación ha finalizado correctamente.\\n\\n"+"\\n".join(details)
+                    self.root.after(0,lambda:messagebox.showinfo("Instalación completada",summary,parent=self.root))
             except Exception as exc: self.root.after(0,lambda:messagebox.showerror("Antigravity Installer",str(exc),parent=self.root))
             finally: self.root.after(0,self.progress.stop)
         threading.Thread(target=work,daemon=True).start()
