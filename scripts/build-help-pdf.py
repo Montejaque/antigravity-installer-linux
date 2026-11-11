@@ -33,7 +33,7 @@ def build():
     styles.add(ParagraphStyle(name="HeadX",fontName=strong,fontSize=12,leading=16,textColor=DARK,spaceBefore=10,spaceAfter=5,keepWithNext=True))
     styles.add(ParagraphStyle(name="BodyX",fontName=normal,fontSize=8.5,leading=12,textColor=DARK,spaceAfter=4))
     styles.add(ParagraphStyle(name="BulletX",fontName=normal,fontSize=8.2,leading=11,leftIndent=12,firstLineIndent=-8,spaceAfter=3))
-    story=[Paragraph("ANTIGRAVITY INSTALLER",styles["CoverX"]),Paragraph("GUÍA DE AYUDA · LINUX x86_64 · VERSIÓN 1.1.2<br/>PUNTO VUELA MONTEJAQUE",styles["SubX"]),HRFlowable(width="100%",thickness=4,color=YELLOW,spaceAfter=12)]
+    story=[Paragraph("ANTIGRAVITY INSTALLER",styles["CoverX"]),Paragraph("GUÍA DE AYUDA · LINUX x86_64 · VERSIÓN 1.1.3<br/>PUNTO VUELA MONTEJAQUE",styles["SubX"]),HRFlowable(width="100%",thickness=4,color=YELLOW,spaceAfter=12)]
     for raw in SOURCE.read_text(encoding="utf-8").splitlines():
         line=raw.strip()
         if not line or line.startswith("# ") or line.startswith("**Punto Vuela"): continue
